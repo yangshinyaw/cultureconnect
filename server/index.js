@@ -1,18 +1,21 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // to parse JSON data
+app.use(express.urlencoded({ extended: true })); // to parse form data
+app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // serve image files
 
+// Routes
 const traditionRoutes = require('./routes/traditions');
 app.use('/api/traditions', traditionRoutes);
 
-// Routes placeholder
 app.get('/', (req, res) => {
   res.send('Welcome to CultureConnect API');
 });

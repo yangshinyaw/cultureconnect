@@ -1,57 +1,45 @@
-const express = require('express');
+const express = require("express");
+const multer = require("multer");
+const path = require("path");
 const router = express.Router();
-const Tradition = require('../models/Tradition');
 
-// Create a new tradition
-router.post('/', async (req, res) => {
-  try {
-    const tradition = new Tradition(req.body);
-    await tradition.save();
-    res.status(201).json(tradition);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
+// 🧱 Set up Multer storage
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/"); // Save files to 'uploads/' folder
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = `${Date.now()}-${file.originalname}`;
+    cb(null, uniqueName);
+  },
 });
 
-// Get all traditions
-router.get('/', async (req, res) => {
-  try {
-    const traditions = await Tradition.find().sort({ createdAt: -1 });
-    res.json(traditions);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+const upload = multer({ storage: storage });
 
-// Get single tradition by ID
-router.get('/:id', async (req, res) => {
-  try {
-    const tradition = await Tradition.findById(req.params.id);
-    if (!tradition) return res.status(404).json({ message: 'Not found' });
-    res.json(tradition);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-});
+// 🛠️ Handle POST request to /api/traditions
+router.post("/", upload.single("image"), (req, res) => {
+  const { title, description, category } = req.body;
+  const image = req.file;
 
-// Update tradition
-router.put('/:id', async (req, res) => {
-  try {
-    const updated = await Tradition.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.json(updated);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+  if (!title || !description || !category || !image) {
+    return res.status(400).json({ message: "All fields are required." });
   }
-});
 
-// Delete tradition
-router.delete('/:id', async (req, res) => {
-  try {
-    await Tradition.findByIdAndDelete(req.params.id);
-    res.json({ message: 'Entry deleted' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
+  // For now, log the data
+  const newTradition = {
+    title,
+    description,
+    category,
+    imagePath: image.path,
+  };
+
+  console.log("🆕 New Tradition:", newTradition);
+
+  // In future: Save to MongoDB
+  res.status(201).json({
+    message: "Tradition added successfully!",
+    data: newTradition,
+  });
 });
 
 module.exports = router;
